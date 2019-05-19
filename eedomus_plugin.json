@@ -1,0 +1,180 @@
+{
+	"plugin_id": "gardena",
+	"name_fr": "Gardena Smart System",
+	"icon": "gardena.png",
+	"version": "1.01",
+	"creation_date": "2019-05-11",
+	"modification_date": "2019-05-12",
+	"author": "Influman",
+	"description_fr": "Contrôle des appareils Smart System (Tondeuses SILENO, Water Control...) de <a href='https://www.gardena.com/fr/outils-jardin/jardin-connecte-smart-system/'>Gardena</a> via API",
+	"description_en": "Gardena Smart System Control",
+	"forum_link": "https://forum.eedomus.com/viewtopic.php?f=50&t=8501",
+	"parameters":
+	[
+		{
+			"parameter": "LOGIN",
+			"description": "Login",
+			"default_value": "",
+			"xtype": "textfield",
+			"field": "allowBlank: false, width: 150"
+		},
+		{
+			"parameter": "PASS",
+			"description": "Password",
+			"default_value": "",
+			"xtype": "textfield",
+			"field": "allowBlank: false, width: 150"
+		},
+		{
+			"parameter": "WATCTRL",
+			"description": "Installer les capteurs d'un Water Control ?",
+			"default_value": "1",
+			"xtype": "combo",
+			"field": "width:100, allowBlank:false, store:[['1', 'Oui'], ['0', 'Non']], triggerAction: 'all'"
+		},
+		{
+			"parameter": "NAME",
+			"description": "Nom de l'appareil Water Control",
+			"default_value": "Jardin",
+			"xtype": "textfield",
+			"field": "allowBlank: false, width: 150"
+		},
+		{
+			"parameter": "MOWERCTRL",
+			"description": "Installer le statut d'une tondeuse ?",
+			"default_value": "0",
+			"xtype": "combo",
+			"field": "width:100, allowBlank:false, store:[['1', 'Oui'], ['0', 'Non']], triggerAction: 'all'"
+		},
+		{
+			"parameter": "MOWER",
+			"description": "Nom de la tondeuse",
+			"default_value": "Tondeuse",
+			"xtype": "textfield",
+			"field": "allowBlank: false, width: 150"
+		}
+	],
+	"scripts":
+	[
+		{
+			"name": "gardena.php"
+		}
+	],
+	"devices":
+	[
+		{
+			"device_id": "statut",
+			"module_id": "51",
+			"type": "http",
+			"name_fr": "Gardena - Global Status",
+			"icon": "gardena.png",
+			"utilisation_id": "35",
+			"parameters":
+			{
+				"VAR1": "plugin.parameters.LOGIN,plugin.parameters.PASS",
+				"VAR2": "15",
+				"VAR3": "",
+				"value_type": "string",
+				"ignore_errors": 3,
+				"RAW_URL": "http://localhost/script/?exec=gardena.php&action=getstatus&server=[VAR1]",
+				"RAW_XPATH": "/GARDENA/STATUS",
+				"POLLING": "30"
+			}
+		},
+		{
+			"device_id": "control",
+			"parent_id": "statut",
+			"module_id": "41",
+			"type": "http",
+			"name_fr": "Gardena - Commands",
+			"icon": "gardena.png",
+			"utilisation_id": "43",
+			"parameters":
+			{
+				"VAR1": "plugin.parameters.LOGIN,plugin.parameters.PASS",
+				"VAR2": "15",
+				"VAR3": "",
+				"value_type": "list",
+				"ignore_errors": 3,
+				"RAW_URL": "",
+				"RAW_XPATH": "",
+				"POLLING": "30"
+			},
+			"values":
+			[
+				{ "value": "1", "description": "Mower Start", "icon": "gardenamower.png", "http_url": "http://localhost/script/?exec=gardena.php", "http_type": "GET",  "http_params": "&server=[VAR1]&action=mower&value=start&device=plugin.parameters.MOWER" },
+				{ "value": "2", "description": "Mower Start resume schedule", "icon": "gardenamower.png", "http_url": "http://localhost/script/?exec=gardena.php", "http_type": "GET",  "http_params": "&server=[VAR1]&action=mower&value=resume&device=plugin.parameters.MOWER" },
+				{ "value": "3", "description": "Mower Park until further notice", "icon": "gardenamower.png", "http_url": "http://localhost/script/?exec=gardena.php", "http_type": "GET",  "http_params": "&server=[VAR1]&action=mower&value=park_notice&device=plugin.parameters.MOWER"},
+				{ "value": "4", "description": "Mower Park until next timer", "icon": "gardenamower.png", "http_url": "http://localhost/script/?exec=gardena.php", "http_type": "GET",  "http_params": "&server=[VAR1]&action=mower&value=park_timer&device=plugin.parameters.MOWER"},
+				{ "value": "10", "description": "Water Control Start", "icon": "gardenawater.png", "http_url": "http://localhost/script/?exec=gardena.php", "http_type": "GET",  "http_params": "&server=[VAR1]&action=water&value=start&device=plugin.parameters.NAME&timer=[VAR2]"},
+				{ "value": "11", "description": "Water Control Stop", "icon": "gardenawater.png", "http_url": "http://localhost/script/?exec=gardena.php", "http_type": "GET",  "http_params": "&server=[VAR1]&action=water&value=stop&device=plugin.parameters.NAME&timer=[VAR2]"}
+			]
+		},
+		{
+			"device_id": "waterbat",
+			"parent_id": "statut",
+			"create" : "plugin.parameters.WATCTRL",
+			"module_id": "51",
+			"type": "http",
+			"name_fr": "Gardena - plugin.parameters.NAME - Battery",
+			"icon": "gardenawaterbattery.png",
+			"utilisation_id": "35",
+			"value_unit": "%",
+			"parameters":
+			{
+				"VAR1": "plugin.parameters.LOGIN,plugin.parameters.PASS",
+				"VAR2": "15",
+				"VAR3": "",
+				"value_type": "float",
+				"ignore_errors": 3,
+				"RAW_URL": "http://localhost/script/?exec=gardena.php&action=polling&server=[VAR1]&device=plugin.parameters.NAME",
+				"RAW_XPATH": "/GARDENA/BATTERY",
+				"POLLING": "30"
+			}
+		},
+		{
+			"device_id": "watertmp",
+			"parent_id": "statut",
+			"create" : "plugin.parameters.WATCTRL",
+			"module_id": "51",
+			"type": "http",
+			"name_fr": "Gardena - plugin.parameters.NAME - Temperature",
+			"icon": "gardenawatertemp.png",
+			"utilisation_id": "35",
+			"value_unit": "°C",
+			"parameters":
+			{
+				"VAR1": "plugin.parameters.LOGIN,plugin.parameters.PASS",
+				"VAR2": "15",
+				"VAR3": "",
+				"value_type": "float",
+				"ignore_errors": 3,
+				"RAW_URL": "http://localhost/script/?exec=gardena.php&action=polling&server=[VAR1]&device=plugin.parameters.NAME",
+				"RAW_XPATH": "/GARDENA/TEMPERATURE",
+				"POLLING": "30"
+			}
+		},
+		{
+			"device_id": "mower",
+			"parent_id": "statut",
+			"create" : "plugin.parameters.MOWERCTRL",
+			"module_id": "51",
+			"type": "http",
+			"name_fr": "Gardena - plugin.parameters.MOWER - Status",
+			"icon": "gardenamower.png",
+			"utilisation_id": "35",
+			"value_unit": " ",
+			"parameters":
+			{
+				"VAR1": "plugin.parameters.LOGIN,plugin.parameters.PASS",
+				"VAR2": "15",
+				"VAR3": "",
+				"value_type": "string",
+				"ignore_errors": 3,
+				"RAW_URL": "http://localhost/script/?exec=gardena.php&action=polling&server=[VAR1]&device=plugin.parameters.MOWER",
+				"RAW_XPATH": "/GARDENA/MOWER_STATUS",
+				"POLLING": "30"
+			}
+		}
+	]
+}
